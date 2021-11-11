@@ -1,158 +1,32 @@
-package openweathermap
+package openweathermap_test
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"testing"
 
+	"github.com/shanehowearth/melbweather/weather/openweathermap"
 	"github.com/stretchr/testify/assert"
 )
 
-type fakeIOReadCloser struct{}
-
-var readResponse []byte
-
-func (f *fakeIOReadCloser) Read(p []byte) (n int, err error) {
-	return len(readResponse), nil
-}
-func (f *fakeIOReadCloser) Close() error {
-	return nil
-}
-
-func Test(t *testing.T) {
-	fakeIORC := &fakeIOReadCloser{}
+func TestNewOpenWeather(t *testing.T) {
 
 	testcases := map[string]struct {
-		city         string
-		appid        string
-		getError     error
-		ioError      error
-		marshalError error
-		outError     error
-		expectedResp *http.Response
-		expected     response
-		readResponse []byte
+		appID string
+		err   error
 	}{
-		"no city": {
-			appid:    "testAppID",
-			outError: fmt.Errorf("city is required"),
+		"successful creation": {
+			appID: "test api key",
 		},
-		"no appid": {
-			city:     "test city",
-			outError: fmt.Errorf("appID is required"),
-		},
-		"http error": {
-			city:     "melbourne",
-			appid:    "testAPPID",
-			getError: fmt.Errorf("fake response error"),
-			outError: fmt.Errorf("fake response error"),
-		},
-		"io error": {
-			city:         "melbourne",
-			appid:        "testAPPID",
-			ioError:      fmt.Errorf("fake io error"),
-			expectedResp: &http.Response{Body: fakeIORC, Status: "200 OK", StatusCode: http.StatusOK},
-			outError:     fmt.Errorf("getWeather: reading response error fake io error"),
-		},
-		"upstream error": {
-			city:         "melbourne",
-			appid:        "testAPPID",
-			expectedResp: &http.Response{Body: fakeIORC, StatusCode: http.StatusBadRequest},
-			outError:     fmt.Errorf("getWeather: got bad status 400"),
-		},
-		"json error": {
-			city:         "melbourne",
-			appid:        "testAPPID",
-			marshalError: fmt.Errorf("fake json error"),
-			expectedResp: &http.Response{Body: fakeIORC, Status: "200 OK", StatusCode: http.StatusOK},
-			outError:     fmt.Errorf("getWeather: unmarshalling response error fake response error"),
-		},
-		"melbourne": {
-			city:         "melbourne",
-			appid:        "testAPPID",
-			expectedResp: &http.Response{Body: fakeIORC, Status: "200 OK", StatusCode: http.StatusOK},
-			expected: response{
-				Temperature:   float64(15.48),
-				Feelslike:     float64(14.6),
-				Pressure:      1001,
-				Humidity:      58,
-				WindSpeed:     float64(2.68),
-				WindDirection: 139,
-				Visibility:    10000,
-			},
-			readResponse: []byte(`{
-    "base": "stations",
-    "clouds": {
-        "all": 75
-    },
-    "cod": 200,
-    "coord": {
-        "lat": -37.814,
-        "lon": 144.9633
-    },
-    "dt": 1636614234,
-    "id": 2158177,
-    "main": {
-        "feels_like": 14.6,
-        "humidity": 58,
-        "pressure": 1001,
-        "temp": 15.48,
-        "temp_max": 16.79,
-        "temp_min": 13.36
-    },
-    "name": "Melbourne",
-    "sys": {
-        "country": "AU",
-        "id": 2008797,
-        "sunrise": 1636571009,
-        "sunset": 1636621495,
-        "type": 2
-    },
-    "timezone": 39600,
-    "visibility": 10000,
-    "weather": [
-        {
-            "description": "broken clouds",
-            "icon": "04d",
-            "id": 803,
-            "main": "Clouds"
-        }
-    ],
-    "wind": {
-        "deg": 139,
-        "gust": 6.71,
-        "speed": 2.68
-    }
-}`),
+		"no appID": {
+			err: fmt.Errorf("appID is required"),
 		},
 	}
 	for name, tc := range testcases {
 		t.Run(name, func(t *testing.T) {
-			// Set up
-			httpGet = func(url string) (resp *http.Response, err error) {
-				return tc.expectedResp, tc.getError
-			}
-
-			ioutilReadAll = func(r io.Reader) ([]byte, error) {
-				return tc.readResponse, tc.ioError
-			}
-			jsonUnmarshal = func(data []byte, v interface{}) error {
-				if tc.marshalError == nil {
-					return json.Unmarshal(data, v)
-				}
-				return tc.marshalError
-			}
-			ow, err := NewOpenWeather()
-			assert.Nil(t, err)
-
-			// Test
-			output, err := ow.GetWeather(tc.city, tc.appid)
-
-			if tc.outError == nil {
+			ow, err := openweathermap.NewOpenWeather(tc.appID)
+			if tc.err == nil {
 				assert.Nil(t, err)
-				assert.Equal(t, tc.expected, output)
+				assert.NotNil(t, ow)
 			} else {
 				assert.NotNil(t, err)
 			}
