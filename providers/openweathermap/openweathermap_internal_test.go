@@ -31,7 +31,7 @@ func TestGetWeather(t *testing.T) {
 		marshalError error
 		outError     error
 		expectedResp *http.Response
-		expected     response
+		expected     struct{ Temperature, WindSpeed float64 }
 		readResponse []byte
 	}{
 		"no city": {
@@ -66,7 +66,7 @@ func TestGetWeather(t *testing.T) {
 		"melbourne": {
 			city:         "melbourne",
 			expectedResp: &http.Response{Body: fakeIORC, Status: "200 OK", StatusCode: http.StatusOK},
-			expected: response{
+			expected: struct{ Temperature, WindSpeed float64 }{
 				Temperature: float64(15.48),
 				WindSpeed:   float64(2.68),
 			},

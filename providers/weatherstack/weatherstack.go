@@ -34,12 +34,6 @@ type Data struct {
 	} `json:"current"`
 }
 
-// DTO
-type response struct {
-	Temperature float64
-	WindSpeed   float64
-}
-
 // Allow http.Get to be faked in unit tests
 var httpGet = http.Get
 
@@ -52,13 +46,15 @@ var jsonUnmarshal = json.Unmarshal
 // GetWeather -
 // ignore the linter warning about returning an unexported type
 // nolint:revive
-func (ws *WeatherStack) GetWeather(city string) (response, error) {
+func (ws *WeatherStack) GetWeather(city string) (struct {
+	Temperature, WindSpeed float64
+}, error) {
 	if city == "" {
-		return response{}, fmt.Errorf("city is required")
+		return struct{ Temperature, WindSpeed float64 }{}, fmt.Errorf("city is required")
 	}
 	wsCity, ok := ws.getCity(city)
 	if !ok {
-		return response{}, fmt.Errorf("%q is an unknown city for this provider", city)
+		return struct{ Temperature, WindSpeed float64 }{}, fmt.Errorf("%q is an unknown city for this provider", city)
 	}
 
 	// build query string - note units are hardcoded to metric
@@ -67,25 +63,27 @@ func (ws *WeatherStack) GetWeather(city string) (response, error) {
 	// Make call to server
 	resp, err := httpGet(query)
 	if err != nil {
-		return response{}, fmt.Errorf("getWeather: http.Get error %w", err)
+		return struct{ Temperature, WindSpeed float64 }{}, fmt.Errorf("getWeather: http.Get error %w", err)
 	}
 	defer resp.Body.Close()
 
 	// Check that the server is happy with out request
 	if resp.StatusCode != http.StatusOK {
-		return response{}, fmt.Errorf("getWeather: got bad status %d", resp.StatusCode)
+		return struct{ Temperature, WindSpeed float64 }{}, fmt.Errorf("getWeather: got bad status %d", resp.StatusCode)
 	}
 	body, err := ioutilReadAll(resp.Body)
 	if err != nil {
-		return response{}, fmt.Errorf("getWeather: reading response error %w", err)
+		return struct{ Temperature, WindSpeed float64 }{}, fmt.Errorf("getWeather: reading response error %w", err)
 	}
 
 	a := Data{}
 	if err := jsonUnmarshal(body, &a); err != nil {
-		return response{}, fmt.Errorf("getWeather: unmarshalling response error %w", err)
+		return struct{ Temperature, WindSpeed float64 }{}, fmt.Errorf("getWeather: unmarshalling response error %w", err)
 	}
 
-	return response{
+	return struct {
+		Temperature, WindSpeed float64
+	}{
 		Temperature: float64(a.Current.Temperature),
 		WindSpeed:   float64(a.Current.WindSpeed),
 	}, nil
