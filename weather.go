@@ -23,8 +23,7 @@ type Provider interface {
 	GetWeather(city string) (struct{ Temperature, WindSpeed float64 }, error)
 }
 
-// Data -
-type Data struct {
+type data struct {
 	m         sync.Mutex
 	providers []Provider
 	last      struct {
@@ -35,27 +34,24 @@ type Data struct {
 }
 
 // NewData -
-func NewData(p []Provider) (*Data, error) {
+// ignore linter warning on returning unexported type
+// nolint:revive
+func New(p []Provider) (*data, error) {
 	// Must have at least one provider
 	if len(p) < 1 {
 		return nil, fmt.Errorf("must have at least one provider")
 	}
-	return &Data{
+	return &data{
 		providers: p,
 		touched:   time.Now().Add(-100 * 24 * 365 * time.Hour), // Default the last touched to 100 years ago
 	}, nil
 }
 
-// AddProvider -
-func (d *Data) AddProvider(p Provider) error {
-	d.m.Lock()
-	defer d.m.Unlock()
-	d.providers = append(d.providers, p)
-	return nil
-}
+// Enable the following to be faked in tests
+var timeNow = time.Now
 
 // Weather -
-func (d *Data) Weather(w http.ResponseWriter, r *http.Request) {
+func (d *data) Weather(w http.ResponseWriter, r *http.Request) {
 	// only GET allowed
 	if r.Method != http.MethodGet {
 		http.Error(w, "Bad method - Go away!", http.StatusMethodNotAllowed)
@@ -66,7 +62,7 @@ func (d *Data) Weather(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	city, ok := query["city"]
 	if !ok {
-		http.Error(w, "Bad Request -", http.StatusBadRequest)
+		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
@@ -80,9 +76,9 @@ func (d *Data) Weather(w http.ResponseWriter, r *http.Request) {
 	defer d.m.Unlock()
 	// Rate limit
 	// Note this limit is on this endpoint rather than provider specific
-	if time.Now().Sub(d.touched) < minGap {
+	if timeNow().Sub(d.touched) < minGap {
 		// use the cached value
-		if resp, err := json.Marshal(d.last); err != nil {
+		if resp, err := json.Marshal(d.last); err == nil {
 			_, err = w.Write(resp)
 			if err != nil {
 				log.Printf("unable to write cached %#v in GetWeather handler with error %v", d.last, err)
@@ -103,7 +99,7 @@ func (d *Data) Weather(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Update cache
-		d.touched = time.Now()
+		d.touched = timeNow()
 		d.last.Temperature = val.Temperature
 		d.last.WindSpeed = val.WindSpeed
 
