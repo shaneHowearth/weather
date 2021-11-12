@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 // OpenWeather -
@@ -57,8 +58,12 @@ func (ow *OpenWeather) GetWeather(city string) (response, error) {
 	if city == "" {
 		return response{}, fmt.Errorf("city is required")
 	}
+	owCity, ok := ow.getCity(strings.ToLower(city))
+	if !ok {
+		return response{}, fmt.Errorf("%q is an unknown city for this provider", city)
+	}
 	// build query string
-	query := ow.url + "?q=" + city + "&appid=" + ow.appID + "&units=metric"
+	query := ow.url + "?q=" + owCity + "&appid=" + ow.appID + "&units=metric"
 
 	// Make call to server
 	resp, err := httpGet(query)
@@ -85,4 +90,15 @@ func (ow *OpenWeather) GetWeather(city string) (response, error) {
 		Temperature: a.Main.Temp,
 		WindSpeed:   a.Wind.Speed,
 	}, nil
+}
+
+// Simple datastore for city name conversion
+// this could easily be an external cache with the orchestrators knowledge of
+// countries/provinces or states/cities as keys and this providers city list as
+// values
+var cities = map[string]string{"melbourne": "melbourne,AU"}
+
+func (ow *OpenWeather) getCity(city string) (string, bool) {
+	c, ok := cities[city]
+	return c, ok
 }
