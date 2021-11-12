@@ -5,6 +5,4 @@ package melbweather
 // used by the application.
 type WeatherProvider interface {
 	GetWeather(city string) (struct{ Temperature, WindSpeed float64 }, error)
-	GetCity(string), string
 }
-
