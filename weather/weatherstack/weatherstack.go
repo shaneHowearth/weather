@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 // WeatherStack -
@@ -55,9 +56,13 @@ func (ws *WeatherStack) GetWeather(city string) (response, error) {
 	if city == "" {
 		return response{}, fmt.Errorf("city is required")
 	}
+	wsCity, ok := ws.getCity(strings.TrimSpace(strings.ToLower(city)))
+	if !ok {
+		return response{}, fmt.Errorf("%q is an unknown city for this provider", city)
+	}
 
 	// build query string - note units are hardcoded to metric
-	query := ws.url + "?query=" + city + "&access_key=" + ws.accessKey + "&units=metric"
+	query := ws.url + "?query=" + wsCity + "&access_key=" + ws.accessKey + "&units=metric"
 
 	// Make call to server
 	resp, err := httpGet(query)
@@ -84,4 +89,15 @@ func (ws *WeatherStack) GetWeather(city string) (response, error) {
 		Temperature: float64(a.Current.Temperature),
 		WindSpeed:   float64(a.Current.WindSpeed),
 	}, nil
+}
+
+// Simple datastore for city name conversion
+// this could easily be an external cache with the orchestrators knowledge of
+// countries/provinces or states/cities as keys and this providers city list as
+// values
+var cities = map[string]string{"melbourne": "Melbourne"}
+
+func (ws *WeatherStack) getCity(city string) (string, bool) {
+	c, ok := cities[city]
+	return c, ok
 }

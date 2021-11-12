@@ -37,6 +37,10 @@ func TestGetWeather(t *testing.T) {
 		"no city": {
 			outError: fmt.Errorf("city is required"),
 		},
+		"non-existant city": {
+			city:     "non-existant",
+			outError: fmt.Errorf("'non-existant' is an unknown city for this provider"),
+		},
 		"http error": {
 			city:     "Melbourne",
 			getError: fmt.Errorf("fake response error"),
