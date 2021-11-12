@@ -58,7 +58,7 @@ func (ow *OpenWeather) GetWeather(city string) (response, error) {
 	if city == "" {
 		return response{}, fmt.Errorf("city is required")
 	}
-	owCity, ok := ow.getCity(strings.ToLower(city))
+	owCity, ok := ow.getCity(city)
 	if !ok {
 		return response{}, fmt.Errorf("%q is an unknown city for this provider", city)
 	}
@@ -99,6 +99,6 @@ func (ow *OpenWeather) GetWeather(city string) (response, error) {
 var cities = map[string]string{"melbourne": "melbourne,AU"}
 
 func (ow *OpenWeather) getCity(city string) (string, bool) {
-	c, ok := cities[city]
+	c, ok := cities[strings.ToLower(strings.TrimSpace(city))]
 	return c, ok
 }

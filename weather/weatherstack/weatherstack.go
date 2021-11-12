@@ -56,7 +56,7 @@ func (ws *WeatherStack) GetWeather(city string) (response, error) {
 	if city == "" {
 		return response{}, fmt.Errorf("city is required")
 	}
-	wsCity, ok := ws.getCity(strings.TrimSpace(strings.ToLower(city)))
+	wsCity, ok := ws.getCity(city)
 	if !ok {
 		return response{}, fmt.Errorf("%q is an unknown city for this provider", city)
 	}
@@ -98,6 +98,6 @@ func (ws *WeatherStack) GetWeather(city string) (response, error) {
 var cities = map[string]string{"melbourne": "Melbourne"}
 
 func (ws *WeatherStack) getCity(city string) (string, bool) {
-	c, ok := cities[city]
+	c, ok := cities[strings.ToLower(strings.TrimSpace(city))]
 	return c, ok
 }
