@@ -25,9 +25,8 @@ func main() {
 	if err != nil {
 		log.Fatal("HTTP_PORT must be an integer")
 	}
-	// PORT must be non-privileged and legit
-	if port <= 1024 || port >= 65535 {
-		log.Fatal("HTTP_PORT must be between 1024 and 65535 (exclusive)")
+	if port >= 65535 {
+		log.Fatal("HTTP_PORT must be below 65535")
 	}
 
 	// Weather providers
@@ -63,8 +62,7 @@ func main() {
 	// dedicated file
 	mux.Handle("/v1/weather", http.HandlerFunc(w.Weather))
 
-	// listen on all localhost
-	ip := "127.0.0.1"
+	ip := "0.0.0.0"
 	server := &http.Server{Addr: ip + ":" + rPort, Handler: mux}
 
 	// Server listens on its own goroutine
