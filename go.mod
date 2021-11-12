@@ -1,4 +1,4 @@
-module github.com/shanehowearth/melbweather
+module github.com/shanehowearth/weather
 
 go 1.16
 

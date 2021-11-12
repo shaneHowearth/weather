@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/shanehowearth/melbweather/weather/openweathermap"
+	"github.com/shanehowearth/weather/providers/openweathermap"
 	"github.com/stretchr/testify/assert"
 )
 
