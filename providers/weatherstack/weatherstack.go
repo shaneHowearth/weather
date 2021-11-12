@@ -58,7 +58,7 @@ func (ws *WeatherStack) GetWeather(city string) (struct {
 	}
 
 	// build query string - note units are hardcoded to metric
-	query := ws.url + "?query=" + wsCity + "&access_key=" + ws.accessKey + "&units=metric"
+	query := ws.url + "?query=" + wsCity + "&access_key=" + ws.accessKey + "&units=m"
 
 	// Make call to server
 	resp, err := httpGet(query)
