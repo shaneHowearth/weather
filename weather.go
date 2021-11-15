@@ -26,11 +26,11 @@ type Provider interface {
 type data struct {
 	m         sync.Mutex
 	providers []Provider
-	last      struct {
+	last      map[string]struct {
 		WindSpeed   float64 `json:"wind_speed"`
 		Temperature float64 `json:"temperature_degrees"`
 	}
-	touched time.Time
+	touched map[string]time.Time
 }
 
 // NewData -
@@ -43,7 +43,11 @@ func New(p []Provider) (*data, error) {
 	}
 	return &data{
 		providers: p,
-		touched:   time.Now().Add(-100 * 24 * 365 * time.Hour), // Default the last touched to 100 years ago
+		touched:   map[string]time.Time{},
+		last: map[string]struct {
+			WindSpeed   float64 `json:"wind_speed"`
+			Temperature float64 `json:"temperature_degrees"`
+		}{},
 	}, nil
 }
 
@@ -60,15 +64,16 @@ func (d *data) Weather(w http.ResponseWriter, r *http.Request) {
 
 	// city is required
 	query := r.URL.Query()
-	city, ok := query["city"]
+	cityQuery, ok := query["city"]
 	if !ok {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
+	city := cityQuery[0]
 
 	// unknown city provided
-	if _, ok := cities[strings.ToLower(strings.TrimSpace(city[0]))]; !ok {
-		e := fmt.Sprintf("Sorry, don't know that city %q", city[0])
+	if _, ok := cities[strings.ToLower(strings.TrimSpace(city))]; !ok {
+		e := fmt.Sprintf("Sorry, don't know that city %q", city)
 		http.Error(w, e, http.StatusBadRequest)
 		return
 	}
@@ -77,7 +82,7 @@ func (d *data) Weather(w http.ResponseWriter, r *http.Request) {
 	defer d.m.Unlock()
 	// Rate limit
 	// Note this limit is on this endpoint rather than provider specific
-	if timeNow().Sub(d.touched) < minGap {
+	if timeNow().Sub(d.touched[city]) < minGap {
 		// use the cached value
 		if resp, err := json.Marshal(d.last); err == nil {
 			_, err = w.Write(resp)
@@ -92,7 +97,7 @@ func (d *data) Weather(w http.ResponseWriter, r *http.Request) {
 
 	// try each of the providers
 	for i := range d.providers {
-		val, err := d.providers[i].GetWeather(city[0])
+		val, err := d.providers[i].GetWeather(city)
 		if err != nil {
 			// log the error
 			log.Printf("ERROR %v", err)
@@ -100,15 +105,20 @@ func (d *data) Weather(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Update cache
-		d.touched = timeNow()
-		d.last.Temperature = val.Temperature
-		d.last.WindSpeed = val.WindSpeed
+		d.touched[city] = timeNow()
+		d.last[city] = struct {
+			WindSpeed   float64 `json:"wind_speed"`
+			Temperature float64 `json:"temperature_degrees"`
+		}{
+			Temperature: val.Temperature,
+			WindSpeed:   val.WindSpeed,
+		}
 
 		// no need to try any more providers
 		break
 	}
 
-	if resp, err := json.Marshal(d.last); err == nil {
+	if resp, err := json.Marshal(d.last[city]); err == nil {
 		_, err = w.Write(resp)
 		if err != nil {
 			log.Printf("unable to write %#v in GetWeather handler with error %v", d.last, err)
