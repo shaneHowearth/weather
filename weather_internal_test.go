@@ -56,9 +56,9 @@ func TestWeatherHandler(t *testing.T) {
 			errBody: "Bad Request\n",
 		},
 		"non-existant city": {
-			query:   "?city=sydney",
+			query:   "?city=fake",
 			status:  http.StatusBadRequest,
-			errBody: "Sorry, don't know that city\n",
+			errBody: "Sorry, don't know that city \"fake\"\n",
 		},
 		"too quick": {
 			query:  "?city=melbourne",

@@ -14,7 +14,7 @@ import (
 const minGap = 3 * time.Second
 
 // Known cities
-var cities = map[string]struct{}{"melbourne": struct{}{}}
+var cities = map[string]struct{}{"melbourne": struct{}{}, "sydney": struct{}{}}
 
 // Provider -
 // All weather providers should implement this interface to allow them to be
@@ -68,7 +68,8 @@ func (d *data) Weather(w http.ResponseWriter, r *http.Request) {
 
 	// unknown city provided
 	if _, ok := cities[strings.ToLower(strings.TrimSpace(city[0]))]; !ok {
-		http.Error(w, "Sorry, don't know that city", http.StatusBadRequest)
+		e := fmt.Sprintf("Sorry, don't know that city %q", city[0])
+		http.Error(w, e, http.StatusBadRequest)
 		return
 	}
 

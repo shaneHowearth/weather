@@ -93,7 +93,7 @@ func (ws *WeatherStack) GetWeather(city string) (struct {
 // this could easily be an external cache with the orchestrators knowledge of
 // countries/provinces or states/cities as keys and this providers city list as
 // values
-var cities = map[string]string{"melbourne": "Melbourne"}
+var cities = map[string]string{"melbourne": "Melbourne", "sydney": "Sydney"}
 
 func (ws *WeatherStack) getCity(city string) (string, bool) {
 	c, ok := cities[strings.ToLower(strings.TrimSpace(city))]

@@ -90,7 +90,7 @@ func (ow *OpenWeather) GetWeather(city string) (struct{ Temperature, WindSpeed f
 // this could easily be an external cache with the orchestrators knowledge of
 // countries/provinces or states/cities as keys and this providers city list as
 // values
-var cities = map[string]string{"melbourne": "melbourne,AU"}
+var cities = map[string]string{"melbourne": "melbourne,AU", "sydney": "sydney,AU"}
 
 func (ow *OpenWeather) getCity(city string) (string, bool) {
 	c, ok := cities[strings.ToLower(strings.TrimSpace(city))]
