@@ -58,7 +58,7 @@ var timeNow = time.Now
 func (d *data) Weather(w http.ResponseWriter, r *http.Request) {
 	// only GET allowed
 	if r.Method != http.MethodGet {
-		http.Error(w, "Bad method - Go away!", http.StatusMethodNotAllowed)
+		http.Error(w, "Bad method", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -66,7 +66,7 @@ func (d *data) Weather(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	cityQuery, ok := query["city"]
 	if !ok {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		http.Error(w, "Bad Request, unknown city", http.StatusBadRequest)
 		return
 	}
 	city := cityQuery[0]
@@ -81,16 +81,16 @@ func (d *data) Weather(w http.ResponseWriter, r *http.Request) {
 	d.m.Lock()
 	defer d.m.Unlock()
 	// Rate limit
-	// Note this limit is on this endpoint rather than provider specific
+	// Note this limit is on this endpoint rather than specific provider
 	if timeNow().Sub(d.touched[city]) < minGap {
 		// use the cached value
-		if resp, err := json.Marshal(d.last); err == nil {
+		if resp, err := json.Marshal(d.last[city]); err == nil {
 			_, err = w.Write(resp)
 			if err != nil {
-				log.Printf("unable to write cached %#v in GetWeather handler with error %v", d.last, err)
+				log.Printf("unable to write cached %#v in GetWeather handler with error %v", d.last[city], err)
 			}
 		} else {
-			log.Printf("unable to marshal cached %#v, with error %v", d.last, err)
+			log.Printf("unable to marshal cached %#v, with error %v", d.last[city], err)
 		}
 		return
 	}
@@ -121,9 +121,9 @@ func (d *data) Weather(w http.ResponseWriter, r *http.Request) {
 	if resp, err := json.Marshal(d.last[city]); err == nil {
 		_, err = w.Write(resp)
 		if err != nil {
-			log.Printf("unable to write %#v in GetWeather handler with error %v", d.last, err)
+			log.Printf("unable to write %#v in GetWeather handler with error %v", d.last[city], err)
 		}
 	} else {
-		log.Printf("unable to marshal %#v, with error %v", d.last, err)
+		log.Printf("unable to marshal %#v, with error %v", d.last[city], err)
 	}
 }

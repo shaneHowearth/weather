@@ -22,7 +22,8 @@ If an unknown city is provided an error message (Sorry, don't know that city)
 will be returned, and the status will be 400.
 
 # Limitations
-Currently the application only supports lookup for Melbourne, adding more
+Currently the application only supports lookup for Melbourne and Sydney (both
+Australia), adding more
 supported locations involves updating a central store, and a store for each
 provider that translates the location name provided to something that it
 understands.
